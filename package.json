@@ -1,6 +1,22 @@
 {
   "name": "sqs-template-catalog",
   "version": "0.1.0",
+  "description": "A simple message catalog for SQS templates.",
+  "author": {
+    "name": "Douglas Gusson",
+    "url": "https://github.com/douglasgusson"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/douglasgusson/sqs-template-catalog",
+  "keywords": [
+    "sqs",
+    "aws",
+    "message",
+    "catalog",
+    "template",
+    "nextjs",
+    "react"
+  ],
   "private": true,
   "scripts": {
     "dev": "next dev",
