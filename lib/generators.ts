@@ -67,6 +67,10 @@ export const GENERATORS: Record<string, GeneratorDefinition> = {
     description: "Gera número inteiro aleatório.",
     generate: () => faker.number.int(),
   },
+  amount: {
+    description: "Gera valor monetário aleatório.",
+    generate: () => faker.finance.amount(),
+  },
   recentDate: {
     description: "Gera uma data recente em ISO-8601.",
     generate: () => faker.date.recent().toISOString(),
