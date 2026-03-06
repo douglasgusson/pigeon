@@ -98,6 +98,6 @@ Abra [http://localhost:3000](http://localhost:3000) no seu navegador.
 }
 ```
 
-1. Compartilhando com o time: Use o botão Exportar no topo da tela para baixar suas configurações e envie para a equipe. Eles só precisam clicar em Importar para ter acesso às mesmas mensagens em suas máquinas locais.
+5. Compartilhando com o time: Use o botão Exportar no topo da tela para baixar suas configurações e envie para a equipe. Eles só precisam clicar em Importar para ter acesso às mesmas mensagens em suas máquinas locais.
 
 Desenvolvido para simplificar o dia a dia e focar no que importa: a qualidade e a lógica de negócio. 🚀
