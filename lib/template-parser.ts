@@ -1,8 +1,25 @@
-import { faker } from "@faker-js/faker";
+import { GENERATOR_PREFIX, runGenerator } from "@/lib/generators";
 
 import { type Template, type TemplateMessageAttribute } from "@/lib/types";
 
 const PLACEHOLDER_REGEX = /{{\s*([^{}]+?)\s*}}/g;
+const QUOTED_PLACEHOLDER_REGEX = /"\{\{\s*([^{}]+?)\s*\}\}"/g;
+
+const SUPPORTED_PLACEHOLDER_TYPES = new Set(["string", "number", "boolean"] as const);
+
+export type PlaceholderValueType = "string" | "number" | "boolean";
+
+export interface ManualVariableDefinition {
+  name: string;
+  type: PlaceholderValueType;
+}
+
+interface ParsedPlaceholder {
+  originalToken: string;
+  isGenerator: boolean;
+  key: string;
+  type: PlaceholderValueType;
+}
 
 function extractPlaceholders(input: string): string[] {
   // Captura todas as variáveis no formato {{variavel}} sem duplicidade.
@@ -20,24 +37,106 @@ function extractPlaceholders(input: string): string[] {
   return [...variableSet];
 }
 
-function executeFakerPath(path: string): unknown {
-  // Resolve dinamicamente expressões como faker.internet.email.
-  const pathTokens = path.replace(/^faker\./, "").split(".");
-  let currentValue: unknown = faker;
-
-  for (const pathToken of pathTokens) {
-    if (typeof currentValue !== "object" && typeof currentValue !== "function") {
-      return undefined;
-    }
-
-    currentValue = (currentValue as Record<string, unknown>)[pathToken];
+function parsePlaceholderToken(rawToken: string): ParsedPlaceholder | null {
+  const trimmedToken = rawToken.trim();
+  if (!trimmedToken) {
+    return null;
   }
 
-  if (typeof currentValue === "function") {
-    return (currentValue as () => unknown)();
+  const tokenParts = trimmedToken.split(":");
+  if (tokenParts.length > 2) {
+    return null;
   }
 
-  return currentValue;
+  const rawKey = tokenParts[0]?.trim() ?? "";
+  const rawType = tokenParts[1]?.trim().toLowerCase() ?? "string";
+
+  if (!rawKey || !SUPPORTED_PLACEHOLDER_TYPES.has(rawType as PlaceholderValueType)) {
+    return null;
+  }
+
+  const isGenerator = rawKey.startsWith(GENERATOR_PREFIX);
+  const normalizedKey = isGenerator ? rawKey.slice(GENERATOR_PREFIX.length) : rawKey;
+  if (!normalizedKey) {
+    return null;
+  }
+
+  return {
+    originalToken: trimmedToken,
+    isGenerator,
+    key: normalizedKey,
+    type: rawType as PlaceholderValueType,
+  };
+}
+
+function parseBooleanValue(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  const normalizedValue = String(value).trim().toLowerCase();
+  if (["true", "1", "yes", "on"].includes(normalizedValue)) {
+    return true;
+  }
+
+  if (["false", "0", "no", "off"].includes(normalizedValue)) {
+    return false;
+  }
+
+  return undefined;
+}
+
+function parseNumberValue(value: unknown): number | undefined {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : undefined;
+  }
+
+  const parsedNumber = Number(String(value).trim());
+  return Number.isFinite(parsedNumber) ? parsedNumber : undefined;
+}
+
+function resolveRawPlaceholderValue(
+  parsedPlaceholder: ParsedPlaceholder,
+  manualValues: Record<string, string>,
+): unknown {
+  if (parsedPlaceholder.isGenerator) {
+    return runGenerator(parsedPlaceholder.key);
+  }
+
+  const hasManualValue = Object.prototype.hasOwnProperty.call(manualValues, parsedPlaceholder.key);
+  if (!hasManualValue) {
+    return undefined;
+  }
+
+  return manualValues[parsedPlaceholder.key];
+}
+
+function toJsonLiteral(value: unknown, type: PlaceholderValueType): string | undefined {
+  if (type === "number") {
+    const parsedNumber = parseNumberValue(value);
+    return parsedNumber === undefined ? undefined : String(parsedNumber);
+  }
+
+  if (type === "boolean") {
+    const parsedBoolean = parseBooleanValue(value);
+    return parsedBoolean === undefined ? undefined : String(parsedBoolean);
+  }
+
+  return JSON.stringify(String(value));
+}
+
+function toAttributeStringValue(value: unknown, type: PlaceholderValueType): string | undefined {
+  if (type === "number") {
+    const parsedNumber = parseNumberValue(value);
+    return parsedNumber === undefined ? undefined : String(parsedNumber);
+  }
+
+  if (type === "boolean") {
+    const parsedBoolean = parseBooleanValue(value);
+    return parsedBoolean === undefined ? undefined : String(parsedBoolean);
+  }
+
+  return String(value);
 }
 
 function replacePlaceholders(
@@ -55,23 +154,38 @@ export function collectTemplateVariables(
   jsonBody: string,
   messageAttributes: TemplateMessageAttribute[],
 ) {
-  // Separa variáveis automáticas (faker.*) das variáveis que exigem input manual.
+  // Separa variáveis automáticas (@*) das variáveis que exigem input manual e tipagem declarada.
   const bodyVariables = extractPlaceholders(jsonBody);
   const attributeVariables = messageAttributes.flatMap((attribute) =>
     extractPlaceholders(attribute.value),
   );
   const allVariables = [...new Set([...bodyVariables, ...attributeVariables])];
 
-  const fakerVariables = allVariables.filter((variableName) =>
-    variableName.startsWith("faker."),
-  );
-  const manualVariables = allVariables.filter(
-    (variableName) => !variableName.startsWith("faker."),
-  );
+  const generatorVariables: string[] = [];
+  const manualVariablesByName = new Map<string, ManualVariableDefinition>();
+
+  for (const variableToken of allVariables) {
+    const parsedPlaceholder = parsePlaceholderToken(variableToken);
+    if (!parsedPlaceholder) {
+      continue;
+    }
+
+    if (parsedPlaceholder.isGenerator) {
+      generatorVariables.push(parsedPlaceholder.originalToken);
+      continue;
+    }
+
+    if (!manualVariablesByName.has(parsedPlaceholder.key)) {
+      manualVariablesByName.set(parsedPlaceholder.key, {
+        name: parsedPlaceholder.key,
+        type: parsedPlaceholder.type,
+      });
+    }
+  }
 
   return {
-    fakerVariables,
-    manualVariables,
+    generatorVariables,
+    manualVariables: [...manualVariablesByName.values()],
   };
 }
 
@@ -82,35 +196,63 @@ export function resolveTemplateForSend(
   // Substitui placeholders no body e nos attributes, validando o JSON final antes de enviar.
   const unresolvedVariables = new Set<string>();
 
-  const resolvePlaceholder = (placeholderName: string) => {
-    if (placeholderName.startsWith("faker.")) {
-      const fakerResult = executeFakerPath(placeholderName);
-
-      if (fakerResult === undefined) {
-        unresolvedVariables.add(placeholderName);
-        return undefined;
+  const bodyWithResolvedVariables = template.jsonBody.replace(
+    QUOTED_PLACEHOLDER_REGEX,
+    (fullMatch, placeholderToken: string) => {
+      const parsedPlaceholder = parsePlaceholderToken(placeholderToken);
+      if (!parsedPlaceholder) {
+        unresolvedVariables.add(placeholderToken.trim());
+        return fullMatch;
       }
 
-      if (typeof fakerResult === "object") {
-        return JSON.stringify(fakerResult);
+      const resolvedRawValue = resolveRawPlaceholderValue(parsedPlaceholder, manualValues);
+      if (resolvedRawValue === undefined || String(resolvedRawValue).trim() === "") {
+        unresolvedVariables.add(parsedPlaceholder.originalToken);
+        return fullMatch;
       }
 
-      return String(fakerResult);
-    }
+      const typedLiteral = toJsonLiteral(resolvedRawValue, parsedPlaceholder.type);
+      if (typedLiteral === undefined) {
+        unresolvedVariables.add(parsedPlaceholder.originalToken);
+        return fullMatch;
+      }
 
-    const manualValue = manualValues[placeholderName];
-    if (!manualValue) {
+      return typedLiteral;
+    },
+  );
+
+  const unresolvedBodyTokens = extractPlaceholders(bodyWithResolvedVariables).map((token) =>
+    token.trim(),
+  );
+  for (const unresolvedBodyToken of unresolvedBodyTokens) {
+    unresolvedVariables.add(unresolvedBodyToken);
+  }
+
+  const resolveAttributePlaceholder = (placeholderName: string) => {
+    const parsedPlaceholder = parsePlaceholderToken(placeholderName);
+    if (!parsedPlaceholder) {
       unresolvedVariables.add(placeholderName);
       return undefined;
     }
 
-    return manualValue;
+    const resolvedRawValue = resolveRawPlaceholderValue(parsedPlaceholder, manualValues);
+    if (resolvedRawValue === undefined || String(resolvedRawValue).trim() === "") {
+      unresolvedVariables.add(parsedPlaceholder.originalToken);
+      return undefined;
+    }
+
+    const attributeValue = toAttributeStringValue(resolvedRawValue, parsedPlaceholder.type);
+    if (attributeValue === undefined) {
+      unresolvedVariables.add(parsedPlaceholder.originalToken);
+      return undefined;
+    }
+
+    return attributeValue;
   };
 
-  const bodyWithResolvedVariables = replacePlaceholders(template.jsonBody, resolvePlaceholder);
   const resolvedMessageAttributes = template.messageAttributes.map((attribute) => ({
     ...attribute,
-    value: replacePlaceholders(attribute.value, resolvePlaceholder),
+    value: replacePlaceholders(attribute.value, resolveAttributePlaceholder),
   }));
 
   if (unresolvedVariables.size > 0) {

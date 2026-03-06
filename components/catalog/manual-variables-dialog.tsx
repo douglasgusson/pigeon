@@ -11,10 +11,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { type ManualVariableDefinition } from "@/lib/template-parser";
 
 interface ManualVariablesDialogProps {
   open: boolean;
-  variables: string[];
+  variables: ManualVariableDefinition[];
   isSubmitting: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: (values: Record<string, string>) => void;
@@ -35,7 +36,7 @@ export function ManualVariablesDialog({
         <DialogHeader>
           <DialogTitle>Preencher variáveis manuais</DialogTitle>
           <DialogDescription>
-            As variáveis abaixo não usam Faker e precisam ser informadas antes do envio.
+            As variáveis abaixo precisam ser informadas antes do envio.
           </DialogDescription>
         </DialogHeader>
 
@@ -46,23 +47,56 @@ export function ManualVariablesDialog({
             event.preventDefault();
 
             const formData = new FormData(event.currentTarget);
-            const values = variables.reduce<Record<string, string>>((result, variableName) => {
-              result[variableName] = String(formData.get(variableName) ?? "").trim();
+            const values = variables.reduce<Record<string, string>>((result, variable) => {
+              result[variable.name] = String(formData.get(variable.name) ?? "").trim();
               return result;
             }, {});
 
             onConfirm(values);
           }}
         >
-          {variables.map((variableName) => (
-            <div key={variableName} className="space-y-1.5">
-              <Label htmlFor={`manual-variable-${variableName}`}>{variableName}</Label>
-              <Input
-                id={`manual-variable-${variableName}`}
-                name={variableName}
-                placeholder={`Digite o valor de ${variableName}`}
-                required
-              />
+          {variables.map((variable) => (
+            <div key={variable.name} className="space-y-1.5">
+              <Label htmlFor={`manual-variable-${variable.name}`}>
+                {variable.name}
+                <span className="ml-1 text-xs text-muted-foreground">({variable.type})</span>
+              </Label>
+
+              {variable.type === "number" ? (
+                <Input
+                  id={`manual-variable-${variable.name}`}
+                  name={variable.name}
+                  type="number"
+                  step="any"
+                  placeholder={`Digite um número para ${variable.name}`}
+                  required
+                />
+              ) : null}
+
+              {variable.type === "boolean" ? (
+                <select
+                  id={`manual-variable-${variable.name}`}
+                  name={variable.name}
+                  className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm"
+                  defaultValue=""
+                  required
+                >
+                  <option value="" disabled>
+                    Selecione True/False
+                  </option>
+                  <option value="true">True</option>
+                  <option value="false">False</option>
+                </select>
+              ) : null}
+
+              {variable.type === "string" ? (
+                <Input
+                  id={`manual-variable-${variable.name}`}
+                  name={variable.name}
+                  placeholder={`Digite o valor de ${variable.name}`}
+                  required
+                />
+              ) : null}
             </div>
           ))}
         </form>

@@ -1,5 +1,3 @@
-import { faker } from "@faker-js/faker";
-
 import { type Template } from "@/lib/types";
 
 export function createEmptyTemplate(): Template {
@@ -12,8 +10,8 @@ export function createEmptyTemplate(): Template {
       {
         eventType: "order.created",
         orderId: "{{orderId}}",
-        customerEmail: "{{faker.internet.email}}",
-        correlationId: "{{faker.string.uuid}}",
+        customerEmail: "{{@email}}",
+        correlationId: "{{@uuid}}",
       },
       null,
       2,
@@ -40,15 +38,15 @@ export function createMockTemplates(): Template[] {
           eventType: "order.created",
           orderId: "{{orderId}}",
           userId: "{{userId}}",
-          customerEmail: "{{faker.internet.email}}",
-          createdAt: "{{faker.date.recent}}",
+          customerEmail: "{{@email}}",
+          createdAt: "{{@recentDate}}",
         },
         null,
         2,
       ),
       messageAttributes: [
         { key: "domain", type: "String", value: "orders" },
-        { key: "traceId", type: "String", value: "{{faker.string.uuid}}" },
+        { key: "traceId", type: "String", value: "{{@uuid}}" },
       ],
     },
     {
@@ -60,9 +58,9 @@ export function createMockTemplates(): Template[] {
         {
           eventType: "user.updated",
           userId: "{{userId}}",
-          email: "{{faker.internet.email}}",
-          fullName: "{{faker.person.fullName}}",
-          company: faker.company.name(),
+          email: "{{@email}}",
+          fullName: "{{@fullName}}",
+          company: "Acme Corp",
         },
         null,
         2,
@@ -83,7 +81,7 @@ export function createMockTemplates(): Template[] {
           paymentId: "{{paymentId}}",
           orderId: "{{orderId}}",
           amount: "{{amount}}",
-          transactionRef: "{{faker.string.alphanumeric}}",
+          transactionRef: "{{@alphanumeric}}",
         },
         null,
         2,

@@ -50,7 +50,7 @@ export function TemplateEditor({
       <CardHeader>
         <CardTitle>Editor de template</CardTitle>
         <CardDescription>
-          Use placeholders como {"{{faker.internet.email}}"} (automático) e {"{{orderId}}"}
+          Use placeholders como {"{{@email}}"} (automático) e {"{{orderId}}"}
           (manual via modal).
         </CardDescription>
       </CardHeader>

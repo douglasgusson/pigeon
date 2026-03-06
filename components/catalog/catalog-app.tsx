@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { Download, History, LayoutList, Upload } from "lucide-react";
+import { BookOpen, Download, History, LayoutList, Upload } from "lucide-react";
 
 import { publishSqsMessageAction } from "@/app/actions";
 import { HistoryList } from "@/components/catalog/history-list";
@@ -12,7 +12,11 @@ import { useToast } from "@/components/ui/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCatalogStore } from "@/hooks/use-catalog-store";
-import { collectTemplateVariables, resolveTemplateForSend } from "@/lib/template-parser";
+import {
+  collectTemplateVariables,
+  resolveTemplateForSend,
+  type ManualVariableDefinition,
+} from "@/lib/template-parser";
 import { exportTemplatesToFile, handleImportTemplates } from "@/lib/template-share";
 import { type SendHistoryItem, type Template } from "@/lib/types";
 
@@ -35,7 +39,7 @@ export function CatalogApp() {
   const [isSending, setIsSending] = useState(false);
 
   const [isManualVariablesModalOpen, setIsManualVariablesModalOpen] = useState(false);
-  const [manualVariables, setManualVariables] = useState<string[]>([]);
+  const [manualVariables, setManualVariables] = useState<ManualVariableDefinition[]>([]);
   const [pendingTemplateToSend, setPendingTemplateToSend] = useState<Template | null>(null);
   const importFileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -311,6 +315,16 @@ export function CatalogApp() {
             <Button variant="outline" onClick={handleExportClick}>
               <Download className="mr-1 h-4 w-4" />
               Exportar
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                window.open("/docs", "_blank", "noopener,noreferrer");
+              }}
+            >
+              <BookOpen className="mr-1 h-4 w-4" />
+              Documentação
             </Button>
           </div>
         </div>

@@ -2,123 +2,78 @@
 
 import Editor, { type Monaco } from "@monaco-editor/react";
 
+import { listGenerators } from "@/lib/generators";
+
 interface JsonMonacoEditorProps {
   value: string;
   onChange: (value: string) => void;
   height?: number;
 }
 
-interface FakerSuggestionItem {
+interface GeneratorSuggestionItem {
   label: string;
-  path: string;
+  key: string;
+  token: string;
   documentation: string;
 }
 
-const FAKER_SUGGESTIONS: FakerSuggestionItem[] = [
-  {
-    label: "internet.email()",
-    path: "faker.internet.email",
-    documentation: "Gera um e-mail aleatório.",
-  },
-  {
-    label: "internet.url()",
-    path: "faker.internet.url",
-    documentation: "Gera uma URL aleatória.",
-  },
-  {
-    label: "string.uuid()",
-    path: "faker.string.uuid",
-    documentation: "Gera UUID v4.",
-  },
-  {
-    label: "string.alphanumeric()",
-    path: "faker.string.alphanumeric",
-    documentation: "Gera string alfanumérica.",
-  },
-  {
-    label: "person.fullName()",
-    path: "faker.person.fullName",
-    documentation: "Gera nome completo.",
-  },
-  {
-    label: "person.firstName()",
-    path: "faker.person.firstName",
-    documentation: "Gera primeiro nome.",
-  },
-  {
-    label: "date.recent()",
-    path: "faker.date.recent",
-    documentation: "Gera data recente.",
-  },
-  {
-    label: "number.int()",
-    path: "faker.number.int",
-    documentation: "Gera número inteiro.",
-  },
-  {
-    label: "phone.number()",
-    path: "faker.phone.number",
-    documentation: "Gera telefone.",
-  },
-  {
-    label: "location.city()",
-    path: "faker.location.city",
-    documentation: "Gera cidade.",
-  },
-];
+const GENERATOR_SUGGESTIONS: GeneratorSuggestionItem[] = listGenerators().map((generator) => ({
+  label: `@${generator.key}`,
+  key: generator.key,
+  token: generator.token,
+  documentation: generator.description,
+}));
 
-let isFakerCompletionRegistered = false;
+let generatorCompletionProviderDisposable: { dispose: () => void } | null = null;
 
-function registerFakerCompletion(monaco: Monaco) {
-  if (isFakerCompletionRegistered) {
-    return;
-  }
-
-  monaco.languages.registerCompletionItemProvider("json", {
-    triggerCharacters: [".", "{"],
+function registerGeneratorCompletion(monaco: Monaco) {
+  generatorCompletionProviderDisposable?.dispose();
+  generatorCompletionProviderDisposable = monaco.languages.registerCompletionItemProvider("json", {
+    triggerCharacters: ["@", "{"],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     provideCompletionItems(model: any, position: any) {
-      const linePrefix = model
-        .getLineContent(position.lineNumber)
-        .slice(0, position.column - 1);
+      const textUntilPosition = model.getValueInRange({
+        startLineNumber: position.lineNumber,
+        startColumn: 1,
+        endLineNumber: position.lineNumber,
+        endColumn: position.column,
+      });
 
-      // Só dispara sugestões quando o usuário está digitando dentro de {{faker....
-      const fakerContextMatch = linePrefix.match(
-        /\{\{\s*(faker(?:\.[a-zA-Z_][\w]*)*\.?[\w]*)$/,
-      );
+      const wordUntilPosition = model.getWordUntilPosition(position);
+      const startsGeneratorPlaceholder = /\{\{@$/.test(textUntilPosition);
+      const isTypingGeneratorKey = /\{\{@[a-zA-Z0-9_]*$/.test(textUntilPosition);
 
-      if (!fakerContextMatch) {
+      // Só dispara quando há contexto válido de placeholder de gerador: {{@...}}
+      if (!startsGeneratorPlaceholder && !isTypingGeneratorKey) {
         return { suggestions: [] };
       }
 
-      const typedFakerExpression = fakerContextMatch[1];
-      const typedAfterFaker = typedFakerExpression.replace(/^faker\.?/, "");
-      const replaceStartColumn =
-        linePrefix.length - typedFakerExpression.length + 1;
+      const generatorKeyMatch = textUntilPosition.match(/\{\{@([a-zA-Z0-9_]*)$/);
+      const typedGeneratorKey = generatorKeyMatch?.[1] ?? "";
 
-      const suggestions = FAKER_SUGGESTIONS.filter((suggestion) => {
-        const normalizedPath = suggestion.path.replace(/^faker\./, "");
-        return normalizedPath.startsWith(typedAfterFaker);
+      const replacementRange = new monaco.Range(
+        position.lineNumber,
+        wordUntilPosition.startColumn,
+        position.lineNumber,
+        wordUntilPosition.endColumn,
+      );
+
+      const suggestions = GENERATOR_SUGGESTIONS.filter((suggestion) => {
+        return suggestion.key.startsWith(typedGeneratorKey);
       }).map((suggestion, index) => ({
         label: suggestion.label,
         kind: monaco.languages.CompletionItemKind.Function,
-        detail: suggestion.path,
+        detail: `{{${suggestion.token}}}`,
         documentation: suggestion.documentation,
         // Completa e fecha a placeholder automaticamente.
-        insertText: `${suggestion.path}}}`,
-        range: {
-          startLineNumber: position.lineNumber,
-          endLineNumber: position.lineNumber,
-          startColumn: replaceStartColumn,
-          endColumn: position.column,
-        },
+        insertText: `@${suggestion.key}`,
+        range: replacementRange,
         sortText: `0${index}`,
       }));
 
       return { suggestions };
     },
   });
-
-  isFakerCompletionRegistered = true;
 }
 
 export function JsonMonacoEditor({
@@ -134,7 +89,7 @@ export function JsonMonacoEditor({
       theme="vs-dark"
       value={value}
       beforeMount={(monaco) => {
-        registerFakerCompletion(monaco);
+        registerGeneratorCompletion(monaco);
       }}
       onChange={(newValue) => {
         onChange(newValue ?? "");
@@ -143,6 +98,9 @@ export function JsonMonacoEditor({
         minimap: { enabled: false },
         automaticLayout: true,
         wordWrap: "on",
+        suggestOnTriggerCharacters: true,
+        quickSuggestions: { other: true, comments: false, strings: true },
+        quickSuggestionsDelay: 0,
         fontSize: 13,
         tabSize: 2,
         formatOnPaste: true,
