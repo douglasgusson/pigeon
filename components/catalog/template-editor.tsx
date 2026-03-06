@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Send, Save, Trash2 } from "lucide-react";
+import { Plus, Send, Save, Trash2, Eye } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +20,7 @@ interface TemplateEditorProps {
   isSending: boolean;
   onTemplateChange: (template: Template) => void;
   onSaveTemplate: () => void;
+  onPreviewTemplate: () => void;
   onSendTemplate: () => void;
 }
 
@@ -30,6 +31,7 @@ export function TemplateEditor({
   isSending,
   onTemplateChange,
   onSaveTemplate,
+  onPreviewTemplate,
   onSendTemplate,
 }: TemplateEditorProps) {
   if (!template) {
@@ -229,6 +231,10 @@ export function TemplateEditor({
           <Button variant="outline" onClick={onSaveTemplate}>
             <Save className="mr-1 h-4 w-4" />
             Salvar
+          </Button>
+          <Button variant="outline" onClick={onPreviewTemplate} disabled={isSending}>
+            <Eye className="mr-1 h-4 w-4" />
+            Preview
           </Button>
           <Button onClick={onSendTemplate} disabled={isSending}>
             <Send className="mr-1 h-4 w-4" />

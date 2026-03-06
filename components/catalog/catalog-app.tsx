@@ -8,6 +8,7 @@ import { HistoryList } from "@/components/catalog/history-list";
 import { ManualVariablesDialog } from "@/components/catalog/manual-variables-dialog";
 import { TemplateEditor } from "@/components/catalog/template-editor";
 import { TemplateSidebar } from "@/components/catalog/template-sidebar";
+import { PreviewDialog } from "@/components/catalog/preview-dialog";
 import { useToast } from "@/components/ui/toast-provider";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,7 +19,7 @@ import {
   type ManualVariableDefinition,
 } from "@/lib/template-parser";
 import { exportTemplatesToFile, handleImportTemplates } from "@/lib/template-share";
-import { type SendHistoryItem, type Template } from "@/lib/types";
+import { type SendHistoryItem, type Template, type TemplateMessageAttribute } from "@/lib/types";
 
 export function CatalogApp() {
   const {
@@ -41,6 +42,15 @@ export function CatalogApp() {
   const [isManualVariablesModalOpen, setIsManualVariablesModalOpen] = useState(false);
   const [manualVariables, setManualVariables] = useState<ManualVariableDefinition[]>([]);
   const [pendingTemplateToSend, setPendingTemplateToSend] = useState<Template | null>(null);
+  
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewPayload, setPreviewPayload] = useState<string>("");
+  const [previewAttributes, setPreviewAttributes] = useState<TemplateMessageAttribute[]>([]);
+  const [pendingTemplateForPreview, setPendingTemplateForPreview] = useState<Template | null>(null);
+  const [previewManualVariables, setPreviewManualVariables] = useState<ManualVariableDefinition[]>([]);
+  const [isPreviewManualVariablesModalOpen, setIsPreviewManualVariablesModalOpen] = useState(false);
+  const [pendingPreviewManualValues, setPendingPreviewManualValues] = useState<Record<string, string>>({});
+  
   const importFileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -190,6 +200,63 @@ export function CatalogApp() {
     }
 
     await executeSend(draftTemplate, {});
+  };
+
+  const handlePreviewTemplate = async () => {
+    if (!draftTemplate) {
+      return;
+    }
+
+    upsertTemplate(draftTemplate);
+
+    const { manualVariables: foundManualVariables } = collectTemplateVariables(
+      draftTemplate.jsonBody,
+      draftTemplate.messageAttributes,
+    );
+
+    // Se houver placeholders manuais, abre o modal para coleta dos valores
+    if (foundManualVariables.length > 0) {
+      setPendingTemplateForPreview(draftTemplate);
+      setPreviewManualVariables(foundManualVariables);
+      setIsPreviewManualVariablesModalOpen(true);
+      return;
+    }
+
+    // Se não houver variáveis manuais, mostra o preview diretamente
+    showPreview(draftTemplate, {});
+  };
+
+  const showPreview = (template: Template, manualValues: Record<string, string>) => {
+    try {
+      const resolvedTemplate = resolveTemplateForSend(template, manualValues);
+      if (resolvedTemplate.unresolvedVariables.length > 0) {
+        toast({
+          title: "Variáveis não resolvidas",
+          description: `Ainda existem variáveis sem valor: ${resolvedTemplate.unresolvedVariables.join(", ")}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setPreviewPayload(resolvedTemplate.finalPayload);
+      setPreviewAttributes(resolvedTemplate.finalMessageAttributes);
+      setIsPreviewOpen(true);
+    } catch (error) {
+      toast({
+        title: "Erro ao preparar preview",
+        description: error instanceof Error ? error.message : "Erro inesperado",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleConfirmPreviewSend = async () => {
+    if (!draftTemplate) {
+      return;
+    }
+
+    setIsPreviewOpen(false);
+    await executeSend(draftTemplate, pendingPreviewManualValues);
   };
 
   const handleResend = async (historyItem: SendHistoryItem) => {
@@ -363,6 +430,9 @@ export function CatalogApp() {
                 isSending={isSending}
                 onTemplateChange={setDraftTemplate}
                 onSaveTemplate={handleSaveTemplate}
+                onPreviewTemplate={() => {
+                  void handlePreviewTemplate();
+                }}
                 onSendTemplate={() => {
                   void handleSendTemplate();
                 }}
@@ -398,6 +468,36 @@ export function CatalogApp() {
           setManualVariables([]);
           void executeSend(pendingTemplateToSend, values);
         }}
+      />
+
+      <ManualVariablesDialog
+        open={isPreviewManualVariablesModalOpen}
+        variables={previewManualVariables}
+        isSubmitting={false}
+        onOpenChange={setIsPreviewManualVariablesModalOpen}
+        onConfirm={(values) => {
+          if (!pendingTemplateForPreview) {
+            return;
+          }
+
+          setIsPreviewManualVariablesModalOpen(false);
+          setPendingPreviewManualValues(values);
+          setPendingTemplateForPreview(null);
+          setPreviewManualVariables([]);
+          showPreview(draftTemplate || pendingTemplateForPreview, values);
+        }}
+      />
+
+      <PreviewDialog
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        finalPayload={previewPayload}
+        finalMessageAttributes={previewAttributes}
+        templateName={draftTemplate?.name || ""}
+        onConfirm={() => {
+          void handleConfirmPreviewSend();
+        }}
+        isLoading={isSending}
       />
     </>
   );

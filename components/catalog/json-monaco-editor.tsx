@@ -8,6 +8,7 @@ interface JsonMonacoEditorProps {
   value: string;
   onChange: (value: string) => void;
   height?: number;
+  readOnly?: boolean;
 }
 
 interface GeneratorSuggestionItem {
@@ -80,6 +81,7 @@ export function JsonMonacoEditor({
   value,
   onChange,
   height = 320,
+  readOnly = false,
 }: JsonMonacoEditorProps) {
   return (
     <Editor
@@ -105,6 +107,7 @@ export function JsonMonacoEditor({
         tabSize: 2,
         formatOnPaste: true,
         scrollBeyondLastLine: false,
+        readOnly,
       }}
     />
   );
