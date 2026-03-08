@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { type SendHistoryItem } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 interface HistoryListProps {
   history: SendHistoryItem[];
@@ -44,7 +45,11 @@ export function HistoryList({
               Lista das mensagens enviadas com payload final e status.
             </CardDescription>
           </div>
-          <Button variant="outline" onClick={onClearHistory} disabled={history.length === 0}>
+          <Button
+            variant="outline"
+            onClick={onClearHistory}
+            disabled={history.length === 0}
+          >
             <Trash2 className="mr-1 h-4 w-4" />
             Limpar histórico
           </Button>
@@ -59,15 +64,27 @@ export function HistoryList({
         ) : null}
 
         {history.map((historyItem) => (
-          <div key={historyItem.id} className="space-y-3 rounded-md border border-border p-4">
+          <div
+            key={historyItem.id}
+            className="space-y-3 rounded-md border border-border p-4"
+          >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="text-sm font-semibold">{historyItem.templateName}</p>
+                <p className="text-sm font-semibold">
+                  {historyItem.templateName}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {new Date(historyItem.sentAt).toLocaleString("pt-BR")}
                 </p>
               </div>
-              <Badge variant={historyItem.status === "success" ? "success" : "destructive"}>
+              <Badge
+                variant={
+                  historyItem.status === "success" ? "default" : "destructive"
+                }
+                className={cn({
+                  "bg-green-700 text-white": historyItem.status === "success",
+                })}
+              >
                 {historyItem.status === "success" ? "Sucesso" : "Erro"}
               </Badge>
             </div>
