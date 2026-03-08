@@ -82,7 +82,7 @@ export function HistoryList({
                   historyItem.status === "success" ? "default" : "destructive"
                 }
                 className={cn({
-                  "bg-green-700 text-white": historyItem.status === "success",
+                  "bg-green-700/10 text-green-700": historyItem.status === "success",
                 })}
               >
                 {historyItem.status === "success" ? "Sucesso" : "Erro"}
