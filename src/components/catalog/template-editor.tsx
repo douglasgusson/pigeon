@@ -105,15 +105,17 @@ export function TemplateEditor({
 
         <div className="space-y-1.5">
           <Label htmlFor="template-json">JSON Body</Label>
-          <JsonMonacoEditor
-            value={template.jsonBody}
-            onChange={(value) =>
-              onTemplateChange({
-                ...template,
-                jsonBody: value,
-              })
-            }
-          />
+          <div className="rounded-lg border bg-muted">
+            <JsonMonacoEditor
+              value={template.jsonBody}
+              onChange={(value) =>
+                onTemplateChange({
+                  ...template,
+                  jsonBody: value,
+                })
+              }
+            />
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -143,11 +145,16 @@ export function TemplateEditor({
 
           <div className="space-y-2">
             {template.messageAttributes.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Nenhum atributo configurado.</p>
+              <p className="text-sm text-muted-foreground">
+                Nenhum atributo configurado.
+              </p>
             ) : null}
 
             {template.messageAttributes.map((attribute, index) => (
-              <div key={`${attribute.key}-${index}`} className="grid gap-2 md:grid-cols-[1fr_140px_1fr_auto]">
+              <div
+                key={`${attribute.key}-${index}`}
+                className="grid gap-2 md:grid-cols-[1fr_140px_1fr_auto]"
+              >
                 <Input
                   placeholder="chave"
                   value={attribute.key}
@@ -232,7 +239,11 @@ export function TemplateEditor({
             <Save className="mr-1 h-4 w-4" />
             Salvar
           </Button>
-          <Button variant="outline" onClick={onPreviewTemplate} disabled={isSending}>
+          <Button
+            variant="outline"
+            onClick={onPreviewTemplate}
+            disabled={isSending}
+          >
             <Eye className="mr-1 h-4 w-4" />
             Preview
           </Button>

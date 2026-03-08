@@ -45,7 +45,7 @@ export function TemplateSidebar({
           <div
             key={template.id}
             className={cn(
-              "rounded-md border p-3 transition-colors",
+              "rounded-xl border p-3 transition-colors",
               template.id === selectedTemplateId ? "border-foreground" : "border-border",
             )}
           >
