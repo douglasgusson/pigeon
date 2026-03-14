@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Copy, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ interface TemplateSidebarProps {
   selectedTemplateId: string | null;
   onSelectTemplate: (templateId: string) => void;
   onCreateTemplate: () => void;
+  onDuplicateTemplate: (templateId: string) => void;
   onDeleteTemplate: (templateId: string) => void;
 }
 
@@ -20,6 +21,7 @@ export function TemplateSidebar({
   selectedTemplateId,
   onSelectTemplate,
   onCreateTemplate,
+  onDuplicateTemplate,
   onDeleteTemplate,
 }: TemplateSidebarProps) {
   return (
@@ -60,10 +62,20 @@ export function TemplateSidebar({
               </p>
             </button>
 
-            <div className="mt-2 flex justify-end">
+            <div className="mt-2 flex justify-end gap-1">
               <Button
                 size="icon"
                 variant="ghost"
+                title="Duplicar template"
+                onClick={() => onDuplicateTemplate(template.id)}
+              >
+                <Copy className="h-4 w-4" />
+                <span className="sr-only">Duplicar template</span>
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                title="Excluir template"
                 onClick={() => onDeleteTemplate(template.id)}
               >
                 <Trash2 className="h-4 w-4" />

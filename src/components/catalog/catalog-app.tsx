@@ -27,6 +27,7 @@ export function CatalogApp() {
     history,
     isHydrated,
     createTemplate,
+    duplicateTemplate,
     upsertTemplate,
     mergeTemplates,
     deleteTemplate,
@@ -422,6 +423,11 @@ export function CatalogApp() {
                 onDeleteTemplate={(templateId) => {
                   deleteTemplate(templateId);
                   toast({ title: "Template removido" });
+                }}
+                onDuplicateTemplate={(templateId) => {
+                  const newId = duplicateTemplate(templateId);
+                  setSelectedTemplateId(newId);
+                  toast({ title: "Template duplicado" });
                 }}
               />
 

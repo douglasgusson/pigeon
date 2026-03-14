@@ -126,6 +126,30 @@ export function useCatalogStore() {
     });
   }, []);
 
+  const duplicateTemplate = useCallback((templateId: string) => {
+    const newId = crypto.randomUUID();
+    setTemplates((currentTemplates) => {
+      const originalTemplate = currentTemplates.find(
+        (template) => template.id === templateId,
+      );
+      if (!originalTemplate) {
+        return currentTemplates;
+      }
+
+      const clonedTemplate: Template = {
+        ...JSON.parse(JSON.stringify(originalTemplate)) as Template,
+        id: newId,
+        name: `${originalTemplate.name} (cópia)`,
+      };
+
+      const originalIndex = currentTemplates.indexOf(originalTemplate);
+      const updatedTemplates = [...currentTemplates];
+      updatedTemplates.splice(originalIndex + 1, 0, clonedTemplate);
+      return updatedTemplates;
+    });
+    return newId;
+  }, []);
+
   const deleteTemplate = useCallback((templateId: string) => {
     setTemplates((currentTemplates) =>
       currentTemplates.filter((template) => template.id !== templateId),
@@ -146,6 +170,7 @@ export function useCatalogStore() {
       history,
       isHydrated,
       createTemplate,
+      duplicateTemplate,
       upsertTemplate,
       mergeTemplates,
       deleteTemplate,
@@ -157,6 +182,7 @@ export function useCatalogStore() {
       history,
       isHydrated,
       createTemplate,
+      duplicateTemplate,
       upsertTemplate,
       mergeTemplates,
       deleteTemplate,
