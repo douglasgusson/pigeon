@@ -38,7 +38,7 @@ const LOCATION_GENERATORS: Record<string, GeneratorDefinition> = {
   },
   "location.state": {
     description: "Gera estado.",
-    generate: () => faker.location.state(),
+    generate: () => faker.location.state({ abbreviated: true }),
   },
   "location.zipCode": {
     description: "Gera CEP.",
