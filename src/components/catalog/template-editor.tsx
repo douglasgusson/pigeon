@@ -14,6 +14,7 @@ import { JsonMonacoEditor } from "@/components/catalog/json-monaco-editor";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { type MessageAttributeType, type Template } from "@/lib/types";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "../ui/select";
 
 interface TemplateEditorProps {
   template: Template | null;
@@ -172,28 +173,35 @@ export function TemplateEditor({
                   }}
                 />
 
-                <select
-                  className="h-9 rounded-md border border-border bg-background px-3 text-sm"
+                <Select
+                  defaultValue={attribute.type}
                   value={attribute.type}
-                  onChange={(event) => {
+                  onValueChange={(value) => {
                     const updatedAttributes = [...template.messageAttributes];
                     updatedAttributes[index] = {
                       ...updatedAttributes[index],
-                      type: event.target.value as MessageAttributeType,
+                      type: value as MessageAttributeType,
                     };
 
                     onTemplateChange({
                       ...template,
                       messageAttributes: updatedAttributes,
                     });
-                  }}
-                >
-                  {ATTRIBUTE_TYPES.map((attributeType) => (
-                    <option key={attributeType} value={attributeType}>
-                      {attributeType}
-                    </option>
-                  ))}
-                </select>
+                  }}>
+                  <SelectTrigger className="w-full max-w-48">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Tipo</SelectLabel>
+                      {ATTRIBUTE_TYPES.map((attributeType) => (
+                        <SelectItem key={attributeType} value={attributeType}>
+                          {attributeType}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
 
                 <Input
                   placeholder="valor"
