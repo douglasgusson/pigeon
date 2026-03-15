@@ -12,17 +12,21 @@ Uma aplicação web moderna desenvolvida para acelerar e padronizar o teste de m
 
 ## ✨ Funcionalidades
 
-* **📖 Gestão de Catálogo:** Crie, edite e organize templates de mensagens especificando a URL da fila, o corpo (JSON) e os `Message Attributes`.
+* **📖 Gestão de Catálogo:** Crie, edite, duplique e organize templates de mensagens especificando a URL da fila, o corpo (JSON) e os `Message Attributes`.
+* **🔍 Busca Fuzzy:** Filtre templates rapidamente por nome ou descrição usando busca fuzzy (powered by [Fuse.js](https://www.fusejs.io/)).
 * **💻 Editor Avançado (Monaco):** O mesmo motor de edição do VS Code integrado na web, oferecendo validação de sintaxe JSON e highlight nativos.
-* **🎲 Geradores Automáticos (encapsulando Faker):** Use placeholders como `{{@email}}`, `{{@uuid}}` e `{{@isAtivo}}`.
+  * **Editor Ampliado:** Expanda o editor em tela cheia para edição confortável de payloads grandes.
+* **🎲 Geradores Automáticos (encapsulando Faker):** Use placeholders como `{{@email}}`, `{{@uuid}}`, `{{@cpf}}`, `{{@person.fullName}}`, `{{@finance.amount}}` e muitos outros.
   * **IntelliSense integrado:** O Monaco sugere os geradores assim que você digita `@` dentro do placeholder.
-  * A lógica de geração fica centralizada no container interno de geradores.
+  * Categorias disponíveis: pessoa, localização, data, veículo, alfanumérico, número, finanças e internet.
 * **🧠 Tipagem Declarativa no Placeholder:** Você pode declarar o tipo em `{{nome:tipo}}` ou `{{@gerador:tipo}}` com `string`, `number` ou `boolean`.
-  * Ex.: `"idade": "{{idadeUsuario:number}}"` e `"ativo": "{{@isAtivo:boolean}}"`.
+  * Ex.: `"idade": "{{idadeUsuario:number}}"` e `"ativo": "{{@boolean:boolean}}"`.
   * O parser converte o tipo e remove aspas no payload final para `number` e `boolean`.
 * **✍️ Variáveis Customizadas (Inputs Manuais):** Precisa testar um ID específico? Adicione `{{orderId}}` no JSON. O app intercepta o envio e abre modal para você digitar o valor (com input adequado ao tipo declarado).
+* **👁️ Preview antes de Enviar:** Visualize o payload final com todas as variáveis resolvidas antes de publicar. Confirme o envio direto pelo preview ou cancele.
 * **🕒 Histórico e Re-envio:** Um log local salva os últimos disparos, mostrando o payload final (já processado com os dados reais) e o status da AWS. Re-envie qualquer mensagem com um clique.
 * **🤝 Colaboração (Import/Export):** Exporte seu catálogo inteiro para um arquivo `.json` e compartilhe com o time. A importação faz um *merge* inteligente (baseado em IDs) para não apagar os templates que seus colegas já criaram localmente.
+* **⌨️ Atalhos de Teclado:** `Ctrl+S` / `⌘+S` para salvar o template rapidamente.
 
 ---
 
@@ -32,6 +36,7 @@ Uma aplicação web moderna desenvolvida para acelerar e padronizar o teste de m
 * **UI/UX:** shadcn/ui, Lucide Icons
 * **Editor:** `@monaco-editor/react`
 * **Mock Data:** `@faker-js/faker` (encapsulado no container de geradores)
+* **Busca Fuzzy:** `fuse.js`
 * **Integração:** AWS SDK para JavaScript (`@aws-sdk/client-sqs`)
 
 ---
@@ -40,6 +45,7 @@ Uma aplicação web moderna desenvolvida para acelerar e padronizar o teste de m
 
 ### Pré-requisitos
 * Node.js (v18+ recomendado)
+* pnpm (gerenciador de pacotes)
 * Credenciais da AWS configuradas com permissão de `sqs:SendMessage` nas filas de teste.
 
 ### Passo a Passo
@@ -54,7 +60,7 @@ git clone https://github.com/douglasgusson/sqs-template-catalog.git
 
 ```bash
 cd sqs-template-catalog
-npm install
+pnpm install # ou npm install
 ```
 
 3. **Configure as Variáveis de Ambiente:**
@@ -71,7 +77,7 @@ _Nota: Se você utiliza perfis da AWS configurados na sua máquina (ex: em `~/.a
 4. **Inicie o servidor de desenvolvimento:**
 
 ```bash
-npm run dev
+pnpm dev # ou npm run dev
 ```
 
 5. **Acesse a aplicação:**
@@ -81,23 +87,52 @@ Abra [http://localhost:3000](http://localhost:3000) no seu navegador.
 
 ## 💡 Guia Rápido de Uso
 
-1. Criando o primeiro template: Clique em "Novo Template", dê um nome descritivo e cole a URL da sua fila SQS.
+1. **Criando o primeiro template:** Clique em "Novo" na sidebar, dê um nome descritivo e cole a URL da sua fila SQS.
 
-1. Usando o Autocomplete: No campo do corpo da mensagem (JSON), comece a digitar `{"email": "{{@` e espere o editor sugerir os geradores disponíveis. Selecione a opção desejada.
+2. **Localizando templates:** Use o campo de busca na sidebar para filtrar templates por nome ou descrição.
 
-1. Publicando: Clique em "Publicar na Fila". Se houver variáveis manuais no seu JSON (como `{{userId}}` ou `{{idadeUsuario:number}}`), preencha o modal que irá aparecer. Em instantes, um Toast de sucesso com o `MessageId` da AWS será exibido.
+3. **Usando o Autocomplete:** No campo do corpo da mensagem (JSON), comece a digitar `"email": "{{@` e espere o editor sugerir os geradores disponíveis. Selecione a opção desejada.
 
-1. Tipagem explícita no payload: para forçar tipos use `:number`, `:boolean` ou `:string` no placeholder. Exemplo completo:
+4. **Editor ampliado:** Para payloads grandes, clique em "Ampliar" ao lado do campo JSON Body para abrir o editor em tela cheia.
+
+5. **Salvando rapidamente:** Use `Ctrl+S` / `⌘+S` para salvar o template sem precisar clicar no botão.
+
+6. **Preview antes de enviar:** Clique em "Preview" para visualizar o payload final com todas as variáveis resolvidas antes de enviar.
+
+7. **Publicando:** Clique em "Enviar para SQS". Se houver variáveis manuais no seu JSON (como `{{userId}}` ou `{{idadeUsuario:number}}`), preencha o modal que irá aparecer. Em instantes, um Toast de sucesso com o `MessageId` da AWS será exibido.
+
+8. **Tipagem explícita no payload:** para forçar tipos use `:number`, `:boolean` ou `:string` no placeholder. Exemplo completo:
 
 ```json
 {
   "idade": "{{idadeUsuario:number}}",
-  "ativo": "{{@isAtivo:boolean}}",
+  "ativo": "{{@boolean:boolean}}",
   "codigo": "{{codigoAcesso}}",
   "idString": "{{@uuid:string}}"
 }
 ```
 
-5. Compartilhando com o time: Use o botão Exportar no topo da tela para baixar suas configurações e envie para a equipe. Eles só precisam clicar em Importar para ter acesso às mesmas mensagens em suas máquinas locais.
+9. **Duplicando templates:** Use o botão de duplicar (ícone de cópia) em qualquer template da sidebar para criar uma cópia.
+
+10. **Compartilhando com o time:** Use o botão "Exportar" no topo da tela para baixar suas configurações e envie para a equipe. Eles só precisam clicar em "Importar" para ter acesso às mesmas mensagens em suas máquinas locais.
+
+---
+
+## 🎲 Geradores Disponíveis
+
+| Categoria | Geradores |
+|---|---|
+| **Internet** | `@email`, `@url` |
+| **Identificadores** | `@uuid`, `@cpf` |
+| **Pessoa** | `@person.fullName`, `@person.firstName`, `@person.lastName`, `@person.sex` |
+| **Localização** | `@location.country`, `@location.state`, `@location.city`, `@location.zipCode`, `@location.streetAddress` |
+| **Data** | `@date.past`, `@date.future`, `@date.recent`, `@date.soon`, `@date.timestamp` |
+| **Veículo** | `@vehicle.manufacturer`, `@vehicle.model`, `@vehicle.color`, `@vehicle.vin` |
+| **Numérico** | `@number.int`, `@number.float` |
+| **Alfanumérico** | `@alphanumeric.short`, `@alphanumeric.medium`, `@alphanumeric.long` |
+| **Finanças** | `@finance.amount`, `@finance.currencyCode`, `@finance.iban` |
+| **Outros** | `@phone`, `@boolean` |
+
+---
 
 Desenvolvido para simplificar o dia a dia e focar no que importa: a qualidade e a lógica de negócio. 🚀
