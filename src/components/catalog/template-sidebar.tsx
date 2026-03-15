@@ -25,7 +25,7 @@ export function TemplateSidebar({
   onDeleteTemplate,
 }: TemplateSidebarProps) {
   return (
-    <Card className="h-full">
+    <Card className="sticky top-6 flex max-h-[calc(100vh-8rem)] flex-col overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-base">Templates salvos</CardTitle>
@@ -36,7 +36,7 @@ export function TemplateSidebar({
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-2">
+      <CardContent className="min-h-0 space-y-2 overflow-y-auto">
         {templates.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             Nenhum template cadastrado. Clique em &quot;Novo&quot; para iniciar.
