@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Plus, Send, Save, Trash2, Eye, Maximize2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { JsonMonacoEditor } from "@/components/catalog/json-monaco-editor";
 import { Input } from "@/components/ui/input";
@@ -44,6 +43,21 @@ export function TemplateEditor({
   onSendTemplate,
 }: TemplateEditorProps) {
   const [isEditorExpanded, setIsEditorExpanded] = useState(false);
+
+  const handleSaveShortcut = useCallback(
+    (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "s") {
+        event.preventDefault();
+        onSaveTemplate();
+      }
+    },
+    [onSaveTemplate],
+  );
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleSaveShortcut);
+    return () => document.removeEventListener("keydown", handleSaveShortcut);
+  }, [handleSaveShortcut]);
 
   if (!template) {
     return (
