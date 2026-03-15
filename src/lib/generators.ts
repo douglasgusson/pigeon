@@ -36,8 +36,12 @@ const LOCATION_GENERATORS: Record<string, GeneratorDefinition> = {
     description: "Gera país.",
     generate: () => faker.location.country(),
   },
-  "location.state": {
-    description: "Gera estado.",
+  "location.state.name": {
+    description: "Gera nome completo do estado.",
+    generate: () => faker.location.state(),
+  },
+  "location.state.abbreviation": {
+    description: "Gera abreviação do estado.",
     generate: () => faker.location.state({ abbreviated: true }),
   },
   "location.zipCode": {
@@ -71,6 +75,22 @@ const DATE_GENERATORS: Record<string, GeneratorDefinition> = {
     description: "Gera uma data próxima em ISO-8601.",
     generate: () => faker.date.soon().toISOString(),
   },
+  "dateonly.past": {
+    description: "Gera uma data passada no formato YYYY-MM-DD.",
+    generate: () => faker.date.past().toISOString().split("T")[0],
+  },
+  "dateonly.future": {
+    description: "Gera uma data futura no formato YYYY-MM-DD.",
+    generate: () => faker.date.future().toISOString().split("T")[0],
+  },
+  "dateonly.recent": {
+    description: "Gera uma data recente no formato YYYY-MM-DD.",
+    generate: () => faker.date.recent().toISOString().split("T")[0],
+  },
+  "dateonly.soon": {
+    description: "Gera uma data próxima no formato YYYY-MM-DD.",
+    generate: () => faker.date.soon().toISOString().split("T")[0],
+  },
   "date.timestamp": {
     description: "Gera timestamp ISO-8601 no instante atual.",
     generate: () => new Date().toISOString(),
@@ -78,6 +98,10 @@ const DATE_GENERATORS: Record<string, GeneratorDefinition> = {
 };
 
 const VEHICLE_GENERATORS: Record<string, GeneratorDefinition> = {
+  "vehicle": {
+    description: "Gera nome de veículo.",
+    generate: () => faker.vehicle.vehicle(),
+  },
   "vehicle.manufacturer": {
     description: "Gera fabricante de veículo.",
     generate: () => faker.vehicle.manufacturer(),
@@ -94,12 +118,24 @@ const VEHICLE_GENERATORS: Record<string, GeneratorDefinition> = {
     description: "Gera número de identificação do veículo (chassi).",
     generate: () => faker.vehicle.vin(),
   },
+  "vehicle.fuel": {
+    description: "Gera tipo de combustível do veículo.",
+    generate: () => faker.vehicle.fuel(),
+  },
 };
 
 const PERSON_GENERATORS: Record<string, GeneratorDefinition> = {
   "person.fullName": {
     description: "Gera nome completo.",
     generate: () => faker.person.fullName(),
+  },
+  "person.fullName.male": {
+    description: "Gera nome completo masculino.",
+    generate: () => faker.person.fullName({ sex: "male" }),
+  },
+  "person.fullName.female": {
+    description: "Gera nome completo feminino.",
+    generate: () => faker.person.fullName({ sex: "female" }),
   },
   "person.firstName": {
     description: "Gera primeiro nome.",
@@ -110,8 +146,24 @@ const PERSON_GENERATORS: Record<string, GeneratorDefinition> = {
     generate: () => faker.person.lastName(),
   },
   "person.sex": {
-    description: "Gera gênero (masculino, feminino ou outro).",
+    description: "Gera gênero (masculino ou feminino).",
     generate: () => faker.person.sex(),
+  },
+  "person.sex.abbreviation": {
+    description: "Gera abreviação do gênero (M ou F).",
+    generate: () => faker.person.sex().substring(0, 1).toUpperCase(),
+  },
+  "person.birthdate": {
+    description: "Gera data de nascimento (YYYY-MM-DD).",
+    generate: () => faker.date.birthdate().toISOString().split("T")[0],
+  },
+  "person.cpf": {
+    description: "Gera um CPF numérico válido (11 dígitos).",
+    generate: () => generateCpfDigits(),
+  },
+  "person.phone": {
+    description: "Gera telefone.",
+    generate: () => faker.phone.number(),
   },
 };
 
@@ -179,14 +231,6 @@ export const GENERATORS: Record<string, GeneratorDefinition> = {
   uuid: {
     description: "Gera um UUID v4.",
     generate: () => faker.string.uuid(),
-  },
-  cpf: {
-    description: "Gera um CPF numérico válido (11 dígitos).",
-    generate: () => generateCpfDigits(),
-  },
-  phone: {
-    description: "Gera telefone.",
-    generate: () => faker.phone.number(),
   },
   boolean: {
     description: "Gera valor booleano true/false.",
