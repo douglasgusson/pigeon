@@ -87,7 +87,7 @@ export function PreviewDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-full sm:max-w-xl md:max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-full sm:max-w-xl md:max-w-2xl lg:max-w-4xl 2xl:max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Preview: {templateName}</DialogTitle>
           <DialogDescription>
